@@ -20,6 +20,7 @@ func main() {
 	inFlag := pflag.StringP("input", "i", "", "Path to input image")
 	outFlag := pflag.StringP("output", "o", "", "Path to output")
 	paletteFlag := pflag.StringP("palette", "p", "", "Palette")
+	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
 
 	pflag.Parse()
 	check(inFlag, "input")
@@ -54,7 +55,12 @@ func main() {
 
 	bounds := inImg.Bounds()
 	outImg := image.NewPaletted(bounds, palette)
-	draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+	if *ditherFlag {
+		dither := draw.FloydSteinberg
+		dither.Draw(outImg, bounds, inImg, bounds.Min)
+	} else {
+		draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+	}
 	
 	jpeg.Encode(outFile, outImg, nil)
 }
