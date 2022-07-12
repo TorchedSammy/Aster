@@ -35,10 +35,11 @@ func main() {
 		}
 		palette = append(palette, col)
 	}
-	
-	for _, p := range palette {
-		fmt.Println(p)
+
+	if len(palette) < 2 {
+		perr("Provided palette has less than 2 colors")
 	}
+
 	inFile, err := os.Open(*inFlag)
 	if err != nil {
 		perr("Could not open input file")
