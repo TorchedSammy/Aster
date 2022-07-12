@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 	"os"
 	"strings"
 
@@ -25,6 +26,7 @@ func main() {
 	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
 	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s")
+	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
 
 	pflag.Parse()
 	check(inFlag, "input")
@@ -69,11 +71,16 @@ func main() {
 
 	var outImg draw.Image
 
+	var colorInverter func(color.Color) color.Color = normalInverter
+	if *grayscaleSwapFlag {
+		colorInverter = grayscaleInverter
+	}
+
 	if *swapFlag {
-		rgbImg := image.NewRGBA(bounds)
+		rgbImg := image.NewNRGBA(bounds)
 		for y := 0; y < bounds.Max.Y; y++ {
 			for x := 0; x < bounds.Max.X; x++ {
-				c := invert(inImg.At(x, y))
+				c := colorInverter(inImg.At(x, y))
 				rgbImg.Set(x, y, c)
 			}
 		}
@@ -110,9 +117,26 @@ func perr(str ...interface{}) {
 	os.Exit(1)
 }
 
-func invert(cl color.Color) color.Color {
+func normalInverter(cl color.Color) color.Color {
 	clr, _ := colorful.MakeColor(cl)
 	h, s, l := clr.Hsl()
+
+	swap := colorful.Hsl(h, s, 1 - l)
+	return swap
+}
+
+func grayscaleInverter(cl color.Color) color.Color {
+	clr, _ := colorful.MakeColor(cl)
+	h, s, l := clr.Hsl()
+
+	r := math.Round(clr.R * 100) / 100
+	g := math.Round(clr.B * 100) / 100
+	b := math.Round(clr.G * 100) / 100
+	diff := math.Abs((r - b) / g)
+	deriv := 0.1
+	if /* s > 0.5 && */ diff >= deriv {
+		return cl
+	}
 
 	swap := colorful.Hsl(h, s, 1 - l)
 	return swap
