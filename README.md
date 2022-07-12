@@ -1,5 +1,5 @@
 # Aster
-> Command line image colorizer utility.
+> 🌼 Command line image colorizer utility.
 
 Aster is a simple command line tool to recolor images into a specific palette.  
 It is based on [felix-u's imgclr tool](https://github.com/felix-u/imgclr);
