@@ -26,6 +26,12 @@ process itself, including with Floyd-Steinberg dithering, so it's pretty fast.
 - [x] Invert lightness of image (colorizing or not)
 
 # Install
+## Prebuilt binaries
+Go [here](https://nightly.link/TorchedSammy/Aster/workflows/build/master) for
+builds on the master branch.
+
+## Compile
+People with Go installed can simply run the following command to install Aster:  
 `go install github.com/TorchedSammy/Aster`
 
 Or, manually compile:  
