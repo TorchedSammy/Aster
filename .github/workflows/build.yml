@@ -31,9 +31,9 @@ jobs:
         if: ${{ matrix.os != 'windows' }}
         with:
           name: aster-${{ matrix.os }}-${{ matrix.arch }}
-          path: aster
+          path: Aster
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os == 'windows' }}
         with:
           name: aster-${{ matrix.os }}-${{ matrix.arch }}
-          path: aster.exe
+          path: Aster.exe
