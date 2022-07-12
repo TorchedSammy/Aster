@@ -21,8 +21,8 @@ process itself, including with Floyd-Steinberg dithering, so it's pretty fast.
   - [ ] GIF
 - [x] Dithering
   - [x] Floyd-Steinberg
-  - [ ] Atkinson
-  - [ ] Jarvis-Judice-Ninke
+  - [x] Atkinson
+  - [x] Jarvis-Judice-Ninke
 - [x] Invert lightness of image (colorizing or not)
 
 # Install
@@ -64,6 +64,15 @@ with a bit more detail, Aster can use Floyd-Steinberg dithering. Here's our new 
 | Image                      | Result                                 |
 | -------------------------- | -------------------------------------- |
 | ![](samples/wallpaper.png) | ![](samples/wallpaper-conv-dither.png) |
+
+There are a few other dithering algorithms supported. One of them is
+Atkinson's. It provides higher contrast but washes away dark of bright parts,
+which might look better with this image. To do that, we can pass the `-D` flag
+to supply the name of the algorithm. In this case, it would be `-D atkinson`
+which gives us:
+| Image                      | Result                                          |
+| -------------------------- | ----------------------------------------------- |
+| ![](samples/wallpaper.png) | ![](samples/wallpaper-conv-dither-atkinson.png) |
 
 One thing about dithering is that the image will look a bit noisy. That is how
 dithering itself works. It's enabled by default due to it making the image look a lot better,

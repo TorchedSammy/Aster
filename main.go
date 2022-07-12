@@ -17,6 +17,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/brouxco/dithering"
 )
 
 func main() {
@@ -24,8 +25,9 @@ func main() {
 	outFlag := pflag.StringP("output", "o", "", "Path to output")
 	paletteFlag := pflag.StringP("palette", "p", "", "Palette of the image")
 	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
+	ditherAlgoFlag := pflag.StringP("ditherAlgorithm", "D", "floydsteinberg", "The dithering algorithm to use.")
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
-	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s")
+	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s (luminance swap)")
 	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
 
 	pflag.Parse()
@@ -38,6 +40,14 @@ func main() {
 		swapFlag = &f
 	}
 
+	var dither draw.Drawer
+	if *ditherFlag {
+		var err error
+		dither, err = getDitherAlgo(*ditherAlgoFlag)
+		if err != nil {
+			perr("Invalid dither algorithm", *ditherAlgoFlag)
+		}
+	}
 	var palette color.Palette
 	if len(*paletteFlag) != 0 {
 		for _, colorStr := range strings.Split(*paletteFlag, " ") {
@@ -91,7 +101,6 @@ func main() {
 	if !*swapOnlyFlag {
 		outImg = image.NewPaletted(bounds, palette)
 		if *ditherFlag {
-			dither := draw.FloydSteinberg
 			dither.Draw(outImg, bounds, inImg, bounds.Min)
 		} else {
 			draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
@@ -178,4 +187,15 @@ func normalizeHex(hx string) (string, error) {
 		default:
 			return "", errors.New("invalid string for hex")
 	}
+}
+
+func getDitherAlgo(algo string) (alg draw.Drawer, err error) {
+	switch algo {
+		case "floydsteinberg": alg = draw.FloydSteinberg // stdlib floyd is more optimized, from reading the code
+		case "atkinson": alg = dithering.NewDither(dithering.Atkinson)
+		case "jjn", "jarvisjudiceninke": alg = dithering.NewDither(dithering.JarvisJudiceNinke)
+		default: err = errors.New("invalid dither algorithm")
+	}
+
+	return
 }
