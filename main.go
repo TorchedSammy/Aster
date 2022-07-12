@@ -12,6 +12,7 @@ import (
 
 	// supported formats
 	"image/jpeg"
+	"image/png"
 
 	"github.com/spf13/pflag"
 )
@@ -49,7 +50,7 @@ func main() {
 		perr("Could not create output file")
 	}
 
-	inImg, _, err := image.Decode(inFile)
+	inImg, format, err := image.Decode(inFile)
 	if err != nil {
 		perr("Could not decode image:", err)
 	}
@@ -62,8 +63,11 @@ func main() {
 	} else {
 		draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
 	}
-	
-	jpeg.Encode(outFile, outImg, nil)
+
+	switch format {
+		case "jpeg": jpeg.Encode(outFile, outImg, nil)
+		case "png": png.Encode(outFile, outImg)
+	}
 }
 
 func check(flagVal *string, name string) {

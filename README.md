@@ -17,7 +17,7 @@ Work in progress!
 - [x] Recolor images
 ## Formats
 - [x] JPEG
-- [ ] PNG
+- [x] PNG
 - [ ] GIF
 
 # Install
