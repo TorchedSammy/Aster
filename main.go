@@ -21,10 +21,10 @@ import (
 func main() {
 	inFlag := pflag.StringP("input", "i", "", "Path to input image")
 	outFlag := pflag.StringP("output", "o", "", "Path to output")
-	paletteFlag := pflag.StringP("palette", "p", "", "Palette")
+	paletteFlag := pflag.StringP("palette", "p", "", "Palette of the image")
 	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
-	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize")
+	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s")
 
 	pflag.Parse()
 	check(inFlag, "input")
