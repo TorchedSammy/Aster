@@ -42,6 +42,7 @@ func main() {
 			col, err := strToColor(colorStr)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Invalid color", colorStr)
+				continue
 			}
 			palette = append(palette, col)
 		}
