@@ -15,17 +15,64 @@ Work in progress!
 
 # Features
 - [x] Recolor images
+- [x] Invert lightness of image (colorizing or not)
+
 ## Formats
 - [x] JPEG
 - [x] PNG
 - [ ] GIF
 
+Aster relies purely on the Go standard library for the image colorization
+process itself, so it's pretty fast.
+
 # Install
 `go install github.com/TorchedSammy/Aster`
 
+Or, manually compile:  
+```
+git clone https://github.com/TorchedSammy/Aster
+cd Aster
+go get -d
+go build
+```
+
+Now you will have an `Aster` binary. If you want it to be lowercase,
+manually compile with -o for the name: `go build -o aster`
+
 # Usage
-`aster -i in.jpg -o out.jpg -p "#fff #000"` will recolor `in.jpg` to black
-and white, and write the result to `out.jpg`.
+See `aster -h` for usage and command line flags.  
+Since typical usage is colorizing an image to a specific color palette,
+an example of that would be: `aster -i in.png -o out.png -p "#000000 #ffffff"`,
+which would colorize `in.png` to the black and white palette supplied by the
+`-p` flag, and would output to `out.png`
+
+Here is what that would look like with the [`wallpaper.png`](samples/wallpaper.png) sample,
+using the VSCode Tokyo Night color scheme:  
+| Image                      | Result                          |
+| -------------------------- | ------------------------------- |
+| ![](samples/wallpaper.png) | ![](samples/wallpaper-conv.png) |
+
+## Dithering
+That result image before doesn't look that good, does it? To make the result look nicer
+with a bit more detail, Aster can use Floyd-Steinberg dithering. Here's our new result:  
+| Image                      | Result                                 |
+| -------------------------- | -------------------------------------- |
+| ![](samples/wallpaper.png) | ![](samples/wallpaper-conv-dither.png) |
+
+One thing about dithering is that the image will look a bit noisy. That is how
+dithering itself works. It's enabled by default due to it making the image look a lot better,
+but you can disable it if you wish by making the flag false (`-d=false`).
+
+## Lightness Invert
+If needed, you can invert/swap the lightness of the image. This is done by converting
+the RGB values of each pixel to HSL and subtracting the L (lightness) from 1.
+This results in preservation of the hue and saturation.
+
+This can be done with the `-s` flag.  
+
+| Image                                                    | Result                                         | Result (Inverted)                              |
+| -------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
+| ![](https://w.wallhaven.cc/full/1k/wallhaven-1kqgdg.jpg) | ![](https://safe.kashima.moe/ku5olz0vcxbb.jpg) | ![](https://safe.kashima.moe/el3twmmjt26l.jpg) |
 
 # License
 MIT
