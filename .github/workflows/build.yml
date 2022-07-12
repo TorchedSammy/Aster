@@ -26,14 +26,14 @@ jobs:
         with:
           go-version: '1.17.3'
       - name: Build
-        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-s -w"
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-s -w" -o aster
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os != 'windows' }}
         with:
           name: aster-${{ matrix.os }}-${{ matrix.arch }}
-          path: Aster
+          path: aster
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os == 'windows' }}
         with:
           name: aster-${{ matrix.os }}-${{ matrix.arch }}
-          path: Aster.exe
+          path: aster.exe
