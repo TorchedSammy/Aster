@@ -11,19 +11,19 @@ This is an alternate version written in Go.
 
 > Made with this palette: *#0e1112 #181d1f #212629 #35383b #4e5256 #666b70 #181d1f #7f9aa3 #1c2124*
 
-Work in progress!
+Aster relies purely on the Go standard library for the image colorization
+process itself, including with Floyd-Steinberg dithering, so it's pretty fast.
 
 # Features
 - [x] Recolor images
+  - [x] JPEG
+  - [x] PNG
+  - [ ] GIF
+- [x] Dithering
+  - [x] Floyd-Steinberg
+  - [ ] Atkinson
+  - [ ] Jarvis-Judice-Ninke
 - [x] Invert lightness of image (colorizing or not)
-
-## Formats
-- [x] JPEG
-- [x] PNG
-- [ ] GIF
-
-Aster relies purely on the Go standard library for the image colorization
-process itself, so it's pretty fast.
 
 # Install
 `go install github.com/TorchedSammy/Aster`
