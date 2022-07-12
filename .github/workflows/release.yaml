@@ -1,8 +1,22 @@
-on: 
-  release:
-    types: [created]
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          title: Aster $tag
+          changelog: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   releases-matrix:
     name: Build Release Binary
     runs-on: ubuntu-latest
@@ -10,17 +24,17 @@ jobs:
       matrix:
         goos: [linux, windows, darwin]
         goarch: ["386", amd64, arm64]
-        exclude:  
+        exclude:
           - goarch: "386"
-            goos: darwin 
+            goos: darwin
           - goarch: arm64
-            goos: windows 
+            goos: windows
     steps:
-    - uses: actions/checkout@v2
-    - uses: wangyoucao577/go-release-action@v1.21
+    - uses: actions/checkout@v3
+    - uses: wangyoucao577/go-release-action@v1.25
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goversion: https://dl.google.com/go/go1.17.3.linux-amd64.tar.gz
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        extra_files: LICENSE README.md
+        binary_name: aster
+        extra_files: LICENSE README.md CHANGELOG.md
