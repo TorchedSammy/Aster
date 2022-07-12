@@ -7,7 +7,7 @@ This is an alternate version written in Go.
 
 | Original                           | Recolored                     |
 | ---------------------------------- | ----------------------------- |
-| ![](samples/ghbanner/original.jpg) | ![](samples/ghbanner/res.jpg) |
+| ![](samples/ghbanner/orig.jpg) | ![](samples/ghbanner/res.jpg) |
 
 > Made with this palette: *#0e1112 #181d1f #212629 #35383b #4e5256 #666b70 #181d1f #7f9aa3 #1c2124*
 
