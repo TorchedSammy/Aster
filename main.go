@@ -15,6 +15,7 @@ import (
 	"image/png"
 
 	"github.com/spf13/pflag"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 func main() {
@@ -22,22 +23,31 @@ func main() {
 	outFlag := pflag.StringP("output", "o", "", "Path to output")
 	paletteFlag := pflag.StringP("palette", "p", "", "Palette")
 	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
+	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
+	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize")
 
 	pflag.Parse()
 	check(inFlag, "input")
 	check(outFlag, "output")
-	check(paletteFlag, "palette")
+//	check(paletteFlag, "palette")
 
-	var palette color.Palette
-	for _, colorStr := range strings.Split(*paletteFlag, " ") {
-		col, err := strToColor(colorStr)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Invalid color", colorStr)
-		}
-		palette = append(palette, col)
+	if *swapOnlyFlag {
+		f := true
+		swapFlag = &f
 	}
 
-	if len(palette) < 2 {
+	var palette color.Palette
+	if len(*paletteFlag) != 0 {
+		for _, colorStr := range strings.Split(*paletteFlag, " ") {
+			col, err := strToColor(colorStr)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Invalid color", colorStr)
+			}
+			palette = append(palette, col)
+		}
+	}
+
+	if len(palette) < 2 && !*swapOnlyFlag {
 		perr("Provided palette has less than 2 colors")
 	}
 
@@ -54,14 +64,30 @@ func main() {
 	if err != nil {
 		perr("Could not decode image:", err)
 	}
-
 	bounds := inImg.Bounds()
-	outImg := image.NewPaletted(bounds, palette)
-	if *ditherFlag {
-		dither := draw.FloydSteinberg
-		dither.Draw(outImg, bounds, inImg, bounds.Min)
-	} else {
-		draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+
+	var outImg draw.Image
+
+	if *swapFlag {
+		rgbImg := image.NewRGBA(bounds)
+		for y := 0; y < bounds.Max.Y; y++ {
+			for x := 0; x < bounds.Max.X; x++ {
+				c := invert(inImg.At(x, y))
+				rgbImg.Set(x, y, c)
+			}
+		}
+		inImg = rgbImg
+		outImg = rgbImg
+	}
+
+	if !*swapOnlyFlag {
+		outImg = image.NewPaletted(bounds, palette)
+		if *ditherFlag {
+			dither := draw.FloydSteinberg
+			dither.Draw(outImg, bounds, inImg, bounds.Min)
+		} else {
+			draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+		}
 	}
 
 	switch format {
@@ -81,6 +107,14 @@ func check(flagVal *string, name string) {
 func perr(str ...interface{}) {
 	fmt.Fprintln(os.Stderr, str...)
 	os.Exit(1)
+}
+
+func invert(cl color.Color) color.Color {
+	clr, _ := colorful.MakeColor(cl)
+	h, s, l := clr.Hsl()
+
+	swap := colorful.Hsl(h, s, 1 - l)
+	return swap
 }
 
 func strToColor(str string) (color.Color, error) {
