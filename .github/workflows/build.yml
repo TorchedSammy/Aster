@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    name: ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, windows, darwin]
+        arch: [386, amd64, arm64]
+        exclude:  
+          - arch: "386"
+            os: darwin 
+          - arch: arm64
+            os: windows 
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.3'
+      - name: Build
+        run: GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -ldflags "-s -w"
+      - uses: actions/upload-artifact@v2
+        if: ${{ matrix.os != 'windows' }}
+        with:
+          name: aster-${{ matrix.os }}-${{ matrix.arch }}
+          path: aster
+      - uses: actions/upload-artifact@v2
+        if: ${{ matrix.os == 'windows' }}
+        with:
+          name: aster-${{ matrix.os }}-${{ matrix.arch }}
+          path: aster.exe
