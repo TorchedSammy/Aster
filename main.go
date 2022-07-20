@@ -10,6 +10,7 @@ import (
 	"math"
 	"os"
 	"strings"
+	"sync"
 
 	// supported formats
 	"image/jpeg"
@@ -29,6 +30,8 @@ func main() {
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
 	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s (luminance swap)")
 	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
+	chunkedFlag := pflag.BoolP("chunk", "c", true, "Process colorization by rectangular chunks")
+	chunksFlag := pflag.IntP("chunkAmount", "C", 4, "Amount of chunks to create out of the image")
 
 	pflag.Parse()
 	check(inFlag, "input")
@@ -40,10 +43,10 @@ func main() {
 		swapFlag = &f
 	}
 
-	var dither draw.Drawer
+	var op draw.Drawer = draw.Src
 	if *ditherFlag {
 		var err error
-		dither, err = getDitherAlgo(*ditherAlgoFlag)
+		op, err = getDitherAlgo(*ditherAlgoFlag)
 		if err != nil {
 			perr("Invalid dither algorithm", *ditherAlgoFlag)
 		}
@@ -100,11 +103,35 @@ func main() {
 
 	if !*swapOnlyFlag {
 		outImg = image.NewPaletted(bounds, palette)
-		if *ditherFlag {
-			dither.Draw(outImg, bounds, inImg, bounds.Min)
-		} else {
-			draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+		if !*chunkedFlag {
+			op.Draw(outImg, bounds, inImg, bounds.Min)
+			return
 		}
+
+		n := *chunksFlag
+		cols := math.Ceil(math.Sqrt(float64(n)))
+		rows := float64(n) / cols
+		w := float64(bounds.Max.X) / cols
+		h := float64(bounds.Max.Y) / rows
+
+		wg := sync.WaitGroup{}
+		wg.Add(n)
+
+		for y := 0; y < int(rows); y++ {
+			for x := 0; x < int(cols); x++ {
+				go func(x, y int) {
+					defer wg.Done()
+					chunk := image.Rectangle{
+						Min: image.Point{x * int(w), y * int(h)},
+						Max: image.Point{(x + 1) * int(w), (y + 1) * int(h)},
+					}
+					p := image.Point{x * int(w), y * int(h)}
+					op.Draw(outImg, chunk, inImg, p)
+				}(x, y)
+			}
+		}
+
+		wg.Wait()
 	}
 
 	switch format {
