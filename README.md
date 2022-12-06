@@ -1,13 +1,11 @@
 # Aster
 > 🌼 Command line image colorizer utility.
 
-Aster is a simple command line tool to recolor images into a specific palette.  
-It is based on [felix-u's imgclr tool](https://github.com/felix-u/imgclr);
-This is an alternate version written in Go.
+Aster is a simple command line tool to recolor images into a specific palette.
 
 | Original                           | Recolored                     |
 | ---------------------------------- | ----------------------------- |
-| ![](samples/ghbanner/orig.jpg) | ![](samples/ghbanner/res.jpg) |
+| ![](samples/ghbanner/orig.jpg)     | ![](samples/ghbanner/res.jpg) |
 
 > Made with this palette: *#0e1112 #181d1f #212629 #35383b #4e5256 #666b70 #181d1f #7f9aa3 #1c2124*
 
@@ -32,7 +30,8 @@ builds on the master branch.
 
 ## Compile
 People with Go installed can simply run the following command to install Aster:  
-`go install github.com/TorchedSammy/Aster`
+`go install github.com/TorchedSammy/Aster`  
+It will be located at ~/go/bin/Aster or `$(go env GOPATH)/bin`, so add that to your `$PATH`.
 
 Or, manually compile:  
 ```
@@ -58,6 +57,11 @@ using the VSCode Tokyo Night color scheme:
 | -------------------------- | ------------------------------- |
 | ![](samples/wallpaper.png) | ![](samples/wallpaper-conv.png) |
 
+## Palettes
+### Pywal
+If you use pywal and would like your wallpaper to match your pywal color scheme,
+you can supply the `-w` (or `--pywal`) flag and Aster will take the generated colors.
+
 ## Dithering
 That result image before doesn't look that good, does it? To make the result look nicer
 with a bit more detail, Aster can use Floyd-Steinberg dithering. Here's our new result:  
@@ -66,8 +70,8 @@ with a bit more detail, Aster can use Floyd-Steinberg dithering. Here's our new 
 | ![](samples/wallpaper.png) | ![](samples/wallpaper-conv-dither.png) |
 
 There are a few other dithering algorithms supported. One of them is
-Atkinson's. It provides higher contrast but washes away dark of bright parts,
-which might look better with this image. To do that, we can pass the `-D` flag
+Atkinson's. It provides higher contrast but washes away some parts, but
+that looks better with this image. To do that, we can pass the `-D` flag
 to supply the name of the algorithm. In this case, it would be `-D atkinson`
 which gives us:
 | Image                      | Result                                          |
