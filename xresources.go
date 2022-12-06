@@ -22,7 +22,7 @@ func xresourcesColors() (color.Palette, error) {
 	reader := bufio.NewReader(f)
 
 	for {
-		line, err := reader.ReadBytes('\n')
+		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -30,9 +30,8 @@ func xresourcesColors() (color.Palette, error) {
 			return nil, err
 		}
 
-		strLine := string(line)
-		if strings.HasPrefix(strLine, "*.color") {
-			parts := strings.Split(strLine, ":")
+		if strings.HasPrefix(line, "*.color") {
+			parts := strings.Split(line, ":")
 			col, err := strToColor(strings.TrimSpace(parts[1]))
 			if err != nil {
 				pwarn("Invalid color", parts[1])
