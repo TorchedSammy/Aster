@@ -27,12 +27,15 @@ func colorsFromFile(path string) (color.Palette, error) {
 		}
 
 		line = strings.Trim(line, "\n")
-		col, err := strToColor(line)
-		if err != nil {
-			pwarn("Invalid color", line)
-			continue
+		colors := strings.Split(line, " ")
+		for _, color := range colors {
+			col, err := strToColor(color)
+			if err != nil {
+				pwarn("Invalid color", color)
+				continue
+			}
+			palette = append(palette, col)
 		}
-		palette = append(palette, col)
 	}
 
 	return palette, nil
