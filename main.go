@@ -24,6 +24,7 @@ func main() {
 	inFlag := pflag.StringP("input", "i", "", "Path to input image")
 	outFlag := pflag.StringP("output", "o", "", "Path to output")
 	paletteFlag := pflag.StringP("palette", "p", "", "Palette of the image")
+	paletteFileFlag := pflag.StringP("paletteFile", "P", "", "Path to a file which contains newline delimited colors")
 	ditherFlag := pflag.BoolP("dither", "d", true, "Whether to use dithering on the image or not")
 	ditherAlgoFlag := pflag.StringP("ditherAlgorithm", "D", "floydsteinberg", "The dithering algorithm to use.")
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
@@ -51,6 +52,14 @@ func main() {
 		}
 	}
 	var palette color.Palette
+
+	if *paletteFileFlag != "" {
+		var err error
+		palette, err = colorsFromFile(*paletteFileFlag)
+		if err != nil {
+			perr(err.Error())
+		}
+	}
 
 	if *xresourcesFlag {
 		var err error
