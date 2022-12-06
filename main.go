@@ -30,6 +30,7 @@ func main() {
 	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s (luminance swap)")
 	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
 	pywalFlag := pflag.BoolP("pywal", "w", false, "Use pywal colors as the palette")
+	xresourcesFlag := pflag.BoolP("xresources", "x", false, "Use colors from Xresources as the palette")
 
 	pflag.Parse()
 	check(inFlag, "input")
@@ -50,6 +51,15 @@ func main() {
 		}
 	}
 	var palette color.Palette
+
+	if *xresourcesFlag {
+		var err error
+		palette, err = xresourcesColors()
+		if err != nil {
+			perr(err.Error())
+		}
+	}
+
 	if *pywalFlag {
 		var err error
 		palette, err = pywalColors()
