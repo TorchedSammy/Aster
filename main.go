@@ -29,6 +29,7 @@ func main() {
 	swapFlag := pflag.BoolP("swap", "s", false, "Swap luminance of image before colorizing")
 	swapOnlyFlag := pflag.BoolP("swapOnly", "S", false, "Only swap luminance and dont colorize. This implies -s (luminance swap)")
 	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
+	pywalFlag := pflag.BoolP("pywal", "w", false, "Use pywal colors as the palette")
 
 	pflag.Parse()
 	check(inFlag, "input")
@@ -49,7 +50,15 @@ func main() {
 		}
 	}
 	var palette color.Palette
-	if len(*paletteFlag) != 0 {
+	if *pywalFlag {
+		var err error
+		palette, err = pywalColors()
+		if err != nil {
+			perr(err.Error())
+		}
+	}
+
+	if len(*paletteFlag) != 0 && len(palette) == 0 {
 		for _, colorStr := range strings.Split(*paletteFlag, " ") {
 			col, err := strToColor(colorStr)
 			if err != nil {
@@ -119,6 +128,10 @@ func check(flagVal *string, name string) {
 		pflag.Usage()
 		os.Exit(1)
 	}
+}
+
+func pwarn(str ...interface{}) {
+	fmt.Fprintln(os.Stderr, str...)
 }
 
 func perr(str ...interface{}) {
