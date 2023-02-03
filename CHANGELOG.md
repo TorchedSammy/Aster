@@ -2,7 +2,6 @@
 This project adheres to [Semantic Versioning](https://semver.org).
 
 ## [1.1.0] - 2023-02-03
-- Ability to automatically get pywal commands via `-w` flag
 - (technically experimental) support for other dithering algorithms, like
 Jarvis-Judice-Ninke (`jjn` in `-D` flag) and Atkinson (`atkinson`)
 - Support getting colorschemes from the following places:
