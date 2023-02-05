@@ -121,7 +121,15 @@ func (l *Lexer) Next() (Token, Position, string) {
 				return DIV, l.pos, "/"
 			case '"':
 				start := l.pos
-				lit, err := l.scanString()
+				lit, err := l.scanString(true)
+				if err != nil {
+					return ILLEGAL, start, ""
+				}
+
+				return STRING, start, lit
+			case '\'':
+				start := l.pos
+				lit, err := l.scanString(false)
 				if err != nil {
 					return ILLEGAL, start, ""
 				}
@@ -217,7 +225,7 @@ func (l *Lexer) scanIdent() string {
 	}
 }
 
-func (l *Lexer) scanString() (literal string, err error) {
+func (l *Lexer) scanString(doubleQuote bool) (literal string, err error) {
 	sb := strings.Builder{}
 	escaped := false
 
@@ -249,7 +257,13 @@ func (l *Lexer) scanString() (literal string, err error) {
 				sb.WriteRune(r)
 				escaped = false
 			case '"':
-				if !escaped {
+				if !escaped && doubleQuote {
+					return sb.String(), nil // we're done
+				}
+				sb.WriteRune(r)
+				escaped = false
+			case '\'':
+				if !escaped && !doubleQuote {
 					return sb.String(), nil // we're done
 				}
 				sb.WriteRune(r)
