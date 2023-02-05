@@ -18,7 +18,7 @@ var interpErrorMessages = map[InterpErrorType]string{
 
 type Scope struct{
 	Outer *Scope
-	Vars map[string]*Value
+	Vars map[string]Value
 	Funs map[string]*Fun
 }
 
@@ -69,7 +69,7 @@ func (i *Interpreter) Run(r io.Reader) error {
 		switch n := node.(type) {
 			case Decl:
 				fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
-				i.s.Vars[n.Name] = &n.Val
+				i.s.Vars[n.Name] = n.Val
 			case Call:
 				if i.s.Funs[n.Name] == nil {
 					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
@@ -79,11 +79,11 @@ func (i *Interpreter) Run(r io.Reader) error {
 
 				for _, arg := range n.Arguments {
 					if arg.Kind == VariableKind {
-						if i.s.Vars[arg.Val] == nil {
+						if i.s.Vars[arg.Val] == EmptyValue {
 							return fmt.Errorf(interpErrorMessages[UndefinedVariable], arg.Val)
 						}
 
-						args = append(args, *i.s.Vars[arg.Val])
+						args = append(args, i.s.Vars[arg.Val])
 					}
 
 					args = append(args, arg)
@@ -96,10 +96,14 @@ func (i *Interpreter) Run(r io.Reader) error {
 	return nil
 }
 
+func (i *Interpreter) GetGlobal(name string) Value {
+	return i.s.Vars[name]
+}
+
 func NewScope(outer *Scope) *Scope {
 	return &Scope{
 		Outer: outer,
-		Vars: make(map[string]*Value),
+		Vars: make(map[string]Value),
 		Funs: make(map[string]*Fun),
 	}
 }

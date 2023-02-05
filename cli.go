@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mattn/go-sixel"
@@ -51,11 +52,7 @@ type command struct{
 	listener func(...interface{})
 }
 
-func runCli() (int, error) {
-	interp := script.NewInterp()
-	f, _ := os.Open("test.aster")
-	interp.Run(f)
-
+func runCli() (int, error) {	
 	completer := readline.NewPrefixCompleter(
 		readline.PcItem("load",
 			readline.PcItemDynamic(func(s string) []string {
@@ -76,6 +73,132 @@ func runCli() (int, error) {
 
 	state := cliState{}
 	sixelEncoder := sixel.NewEncoder(os.Stdout)
+	interp := script.NewInterp()
+
+	interp.RegisterFunction("hello", script.Fun{
+		Caller: func(v []script.Value) []script.Value {
+			greet := "world"
+			if len(v) > 0 && v[0] != script.EmptyValue && v[0].Kind == script.StringKind {
+				greet = v[0].Val
+			}
+
+			fmt.Printf("Hello %s!\n", greet)
+
+			return []script.Value{}
+		},
+	})
+
+	interp.RegisterFunction("prompt", script.Fun{
+		Caller: func(v []script.Value) []script.Value {
+			if len(v) == 0 {
+				fmt.Println("Missing required argument to set prompt")
+				return []script.Value{}
+			}
+
+			rl.SetPrompt(v[0].Val)
+			return []script.Value{}
+		},
+	})
+
+	interp.RegisterFunction("load", script.Fun{
+		Caller: func(v []script.Value) (ret []script.Value) {
+			if len(v) == 0 {
+				fmt.Println("Missing required path to load image")
+				return
+			}
+
+			if v[0].Kind != script.StringKind {
+				fmt.Println("")
+				return
+			}
+
+			path := v[0].Val
+			inFile, err := os.Open(path)
+			if err != nil {
+				fmt.Println("Could not open input file")
+				return
+			}
+
+			inImg, format, err := image.Decode(inFile)
+			if err != nil {
+				fmt.Println("Could not decode image:", err)
+				return
+			}
+
+			state.sourceImage = inImg
+			state.sourceFormat = format
+			state.workingImage = state.sourceImage
+			return
+		},
+	})
+
+	interp.RegisterFunction("palette", script.Fun{
+		Caller: func(v []script.Value) (ret []script.Value) {
+			if len(v) == 0 {
+				// TODO: display palette nicely
+				return
+			}
+
+			// now we're setting the palette
+			var palette color.Palette
+			if len(v) == 1 {
+				var err error
+				palette, err = colorsFromFile(v[0].Val)
+				if err != nil {
+					fmt.Println(err)
+				}
+			} else {
+				for _, val := range v {
+					colorStr := val.Val
+					col, err := strToColor(colorStr)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, "Invalid color", colorStr)
+						continue
+					}
+					palette = append(palette, col)
+				}
+			}
+			state.palette = palette
+			return
+		},
+	})
+
+	interp.RegisterFunction("recolor", script.Fun{
+		Caller: func(v []script.Value) (ret []script.Value) {
+			res, err := recolor(state.workingImage, state.palette)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			state.pushWorkingImg(res)
+			return
+		},
+	})
+
+	interp.RegisterFunction("preview", script.Fun{
+		Caller: func(v []script.Value) (ret []script.Value) {
+			f := 35
+			scale := interp.GetGlobal("previewScale")
+			fmt.Println(scale)
+			if scale.Kind == script.NumberKind {
+				f, _ = strconv.Atoi(scale.Val)
+			}
+
+			sixelEncoder.Encode(resize(state.workingImage, f))
+			return
+		},
+	})
+
+	interp.RegisterFunction("undo", script.Fun{
+		Caller: func(v []script.Value) (ret []script.Value) {
+			state.undoImg()
+			return
+		},
+	})
+
+	f, _ := os.Open("test.aster")
+	interp.Run(f)
 
 	for {
 		line, err := rl.Readline()
@@ -91,94 +214,6 @@ func runCli() (int, error) {
 		if err != nil {
 			fmt.Println(err)
 			continue
-		}
-
-		cmd := userCommand{}
-		switch cmd.name {
-			case "hello":
-				if len(cmd.args) == 0 {
-					fmt.Println("Hello world!")
-				} else {
-					fmt.Printf("Hello %s!", cmd.args[1])
-				}
-			case "prompt":
-				if len(cmd.args) == 0 {
-					fmt.Println("Missing required argument to set prompt")
-					continue
-				}
-
-				rl.SetPrompt(cmd.args[0])
-			case "load":
-				if len(cmd.args) == 0 {
-					fmt.Println("Missing required path to load image")
-				}
-
-				path := cmd.args[0]
-				inFile, err := os.Open(path)
-				if err != nil {
-					fmt.Println("Could not open input file")
-					continue
-				}
-
-				inImg, format, err := image.Decode(inFile)
-				if err != nil {
-					fmt.Println("Could not decode image:", err)
-					continue
-				}
-
-				state.sourceImage = inImg
-				state.sourceFormat = format
-				state.workingImage = state.sourceImage
-			case "palette":
-				if len(cmd.args) == 0 {
-					// TODO: display palette nicely
-					continue
-				}
-
-				// now we're setting the palette
-				var palette color.Palette
-				if len(cmd.args) == 1 {
-					var err error
-					palette, err = colorsFromFile(cmd.args[0])
-					if err != nil {
-						fmt.Println(err)
-					}
-				} else {
-					for _, colorStr := range cmd.args {
-						col, err := strToColor(colorStr)
-						if err != nil {
-							fmt.Fprintln(os.Stderr, "Invalid color", colorStr)
-							continue
-						}
-						palette = append(palette, col)
-					}
-				}
-				state.palette = palette
-			case "recolor":
-				var dither bool
-				if len(cmd.args) != 0 {
-					if cmd.args[0] == "@dither" {
-						dither = true
-					}
-				}
-
-				var res image.Image
-				var err error
-				if dither {
-					res, err = recolorDither(state.workingImage, state.palette, "floydsteinberg")
-				} else {
-					res, err = recolor(state.workingImage, state.palette)
-				}
-
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				state.pushWorkingImg(res)
-			case "preview":
-				sixelEncoder.Encode(resize(state.workingImage, 40))
-			case "undo":
-				state.undoImg()
 		}
 	}
 }

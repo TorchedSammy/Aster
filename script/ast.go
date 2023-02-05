@@ -168,6 +168,13 @@ func Parse(r io.Reader) ([]Node, error) {
 							Kind: StringKind,
 						}
 						n.Arguments = append(n.Arguments, val)
+					case NUMBER:
+						val := Value{
+							Pos: pos,
+							Val: lit,
+							Kind: NumberKind,
+						}
+						n.Arguments = append(n.Arguments, val)
 					case VAR_REF:
 						// #variable is a reference to a variable
 						// untagged identifiers are commands
