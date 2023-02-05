@@ -116,7 +116,7 @@ func (l *Lexer) Next() (Token, Position, string) {
 					return COMMENT, start, lit
 				}
 
-				return DIV, start, lit
+				return DIV, l.pos, "/"
 			case '"':
 				start := l.pos
 				lit, err := l.scanString()
