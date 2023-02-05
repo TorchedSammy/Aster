@@ -110,12 +110,22 @@ func (s SwitchAssign) End() Position {
 	return s.Pos
 }
 
-func Parse(r io.Reader) ([]Node, error) {
+func Parse(r io.Reader) (nodes []Node, err error) {
 	lx := NewLexer(r)
+	ops := []Node{}
+
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("Unknown error")
+			}
+		}
+	}()
 
 	// TODO: better error handling
 	// and definitely code cleanup
-	ops := []Node{}
 	for {
 		token, pos, lit := lx.Next()
 		if token == EOF {
@@ -196,11 +206,15 @@ func Parse(r io.Reader) ([]Node, error) {
 					// @switch is a command line option
 					// @switch=val assigns a value while the latter toggles
 					// a boolean
-					ops = append(ops, SwitchAssign{
+					n := SwitchAssign{
 						Pos: pos,
-						Name: lit,
 						IsToggle: true,
-					})
+					}
+					t2, _, lit := lx.Next()
+					expectToken(t2, IDENT)
+
+					n.Name = lit
+					ops = append(ops, n)
 			/*
 			
 			case LPAREN:
