@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattn/go-sixel"
 	"github.com/chzyer/readline"
+	"github.com/TorchedSammy/Aster/script"
 )
 
 type cliState struct{
@@ -51,6 +52,10 @@ type command struct{
 }
 
 func runCli() (int, error) {
+	interp := script.NewInterp()
+	f, _ := os.Open("test.aster")
+	interp.Run(f)
+
 	completer := readline.NewPrefixCompleter(
 		readline.PcItem("load",
 			readline.PcItemDynamic(func(s string) []string {
@@ -82,7 +87,8 @@ func runCli() (int, error) {
 			return 2, err
 		}
 
-		cmd := parseLine(line)
+		interp.Run(strings.NewReader(line))
+		cmd := userCommand{}
 		switch cmd.name {
 			case "hello":
 				if len(cmd.args) == 0 {
@@ -170,53 +176,4 @@ func runCli() (int, error) {
 				state.undoImg()
 		}
 	}
-}
-
-func parseLine(line string) userCommand {
-	line = strings.TrimSpace(line)
-
-	fields := split(line)
-	cmd := userCommand{}
-
-	args := []string{}
-	for i, field := range fields {
-		if i == 0 {
-			cmd.name = strings.ToLower(field)
-			continue
-		}
-
-		args = append(args, field)
-	}
-	cmd.args = args
-
-	return cmd
-}
-
-// stolen from hilbish
-func split(str string) []string {
-	strParts := []string{}
-	sb := &strings.Builder{}
-	quoted := false
-
-	for i, r := range str {
-		if r == '"' {
-			quoted = !quoted
-		} else if r == ' ' && str[i - 1] == '\\' {
-			sb.WriteRune(r)
-		} else if !quoted && r == ' ' {
-			strParts = append(strParts, sb.String())
-			sb.Reset()
-		} else {
-			sb.WriteRune(r)
-		}
-	}
-	if strings.HasSuffix(str, " ") {
-		strParts = append(strParts, "")
-	}
-
-	if sb.Len() > 0 {
-		strParts = append(strParts, sb.String())
-	}
-
-	return strParts
 }
