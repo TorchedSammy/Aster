@@ -25,6 +25,12 @@ const (
 	RPAREN // )
 	VAR_REF // #
 
+	// Math
+	ADD // +
+	SUB // -
+	DIV // /
+	MUL // *
+
 	// keywords
 	VAR
 )
@@ -42,6 +48,11 @@ var tokenIdentMap = map[Token]string{
 	LPAREN: "LPAREN",
 	RPAREN: "RPAREN",
 	VAR_REF: "VAR_REF",
+
+	ADD: "ADD",
+	SUB: "SUB",
+	DIV: "DIV",
+	MUL: "MUL",
 
 	VAR: "VAR",
 }
@@ -90,6 +101,22 @@ func (l *Lexer) Next() (Token, Position, string) {
 				// do things with newLine
 				l.pos.Line++
 				l.pos.Column = 0
+			case '/':
+				r1 := l.peekExpectRune(func (r rune) bool {return true})
+				if r1 == '/' {
+					l.readRune() // advance to remove the 2nd /
+
+					r2, _, _ := l.readRune()
+					if r2 != ' ' {
+						l.Back()
+					}
+					start := l.pos
+					lit := l.scanComment()
+
+					return COMMENT, start, lit
+				}
+
+				return DIV, start, lit
 			case '"':
 				start := l.pos
 				lit, err := l.scanString()
@@ -127,12 +154,27 @@ func (l *Lexer) Next() (Token, Position, string) {
 	}
 }
 
+func (l *Lexer) peekExpectRune(cond func(rune) bool) rune {
+	r := l.expectRune(cond)
+	l.Back()
+
+	return r
+}
+
+func (l *Lexer) peekRune() (rune, bool, error) {
+	r, done, err := l.readRune()
+	l.Back()
+
+	return r, done, err
+}
+
 func (l *Lexer) Back() {
 	l.reader.UnreadRune()
 	l.pos.Column--
 }
 
 func (l *Lexer) readRune() (rune, bool, error) {
+	l.pos.Column++
 	r, _, err := l.reader.ReadRune()
 	if err != nil {
 		if err == io.EOF {
@@ -243,6 +285,27 @@ func (l *Lexer) scanNumber() string {
 		}
 
 		return sb.String()
+	}
+}
+
+func (l *Lexer) scanComment() string {
+	sb := strings.Builder{}
+
+	for {
+		r, _, err := l.reader.ReadRune()
+		if err != nil {
+			if err == io.EOF {
+				return sb.String()
+			}
+		}
+		l.pos.Column++
+
+		switch r {
+			case '\n':
+				return sb.String()
+			default:
+				sb.WriteRune(r)
+		}
 	}
 }
 
