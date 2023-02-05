@@ -68,7 +68,7 @@ func (i *Interpreter) Run(r io.Reader) error {
 	for _, node := range nodes {
 		switch n := node.(type) {
 			case Decl:
-				fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
+				//fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
 				i.s.Vars[n.Name] = n.Val
 			case Call:
 				if i.s.Funs[n.Name] == nil {
