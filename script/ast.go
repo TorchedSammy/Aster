@@ -159,6 +159,8 @@ func Parse(r io.Reader) ([]Node, error) {
 				token, pos, lit = lx.Next()
 				fmt.Printf("%s %s\n", token, lit)
 				switch token {
+					case ILLEGAL:
+						return ops, fmt.Errorf("oopsie")
 					case STRING:
 						val := Value{
 							Pos: pos,

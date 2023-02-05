@@ -5,9 +5,25 @@ import (
 	"io"
 )
 
+type InterpErrorType int
+const (
+	UndefinedCommand InterpErrorType = iota
+	UndefinedVariable
+)
+
+var interpErrorMessages = map[InterpErrorType]string{
+	UndefinedCommand: "attempt to run undefined command %s",
+	UndefinedVariable: "reference to undefined variable %s",
+}
+
+type Scope struct{
+	Outer *Scope
+	Vars map[string]*Value
+	Funs map[string]*Fun
+}
+
 type Interpreter struct{
-	vars map[string]*Value
-	funs map[string]*Fun
+	s *Scope
 }
 
 // An aster function
@@ -17,8 +33,7 @@ type Fun struct{
 
 func NewInterp() *Interpreter {
 	intr := &Interpreter{
-		vars: make(map[string]*Value),
-		funs: make(map[string]*Fun),
+		s: NewScope(nil),
 	}
 
 	intr.RegisterFunction("print", Fun{
@@ -41,40 +56,50 @@ func NewInterp() *Interpreter {
 }
 
 func (i *Interpreter) RegisterFunction(name string, f Fun) {
-	i.funs[name] = &f
+	i.s.Funs[name] = &f
 }
 
-func (i *Interpreter) Run(r io.Reader) {
+func (i *Interpreter) Run(r io.Reader) error {
 	nodes, err := Parse(r)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for _, node := range nodes {
 		switch n := node.(type) {
 			case Decl:
 				fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
-				i.vars[n.Name] = &n.Val
+				i.s.Vars[n.Name] = &n.Val
 			case Call:
-				if i.funs[n.Name] == nil {
-					panic("unknown function " + n.Name)
+				if i.s.Funs[n.Name] == nil {
+					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
 				}
 
 				args := []Value{}
 
 				for _, arg := range n.Arguments {
 					if arg.Kind == VariableKind {
-						if i.vars[arg.Val] == nil {
-							panic(fmt.Sprintf("undefined variable %s", arg.Val))
+						if i.s.Vars[arg.Val] == nil {
+							return fmt.Errorf(interpErrorMessages[UndefinedVariable], arg.Val)
 						}
 
-						args = append(args, *i.vars[arg.Val])
+						args = append(args, *i.s.Vars[arg.Val])
 					}
 
 					args = append(args, arg)
 				}
 
-				i.funs[n.Name].Caller(args)
+				i.s.Funs[n.Name].Caller(args)
 		}
+	}
+
+	return nil
+}
+
+func NewScope(outer *Scope) *Scope {
+	return &Scope{
+		Outer: outer,
+		Vars: make(map[string]*Value),
+		Funs: make(map[string]*Fun),
 	}
 }

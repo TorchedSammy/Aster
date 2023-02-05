@@ -87,7 +87,12 @@ func runCli() (int, error) {
 			return 2, err
 		}
 
-		interp.Run(strings.NewReader(line))
+		err = interp.Run(strings.NewReader(line))
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
 		cmd := userCommand{}
 		switch cmd.name {
 			case "hello":
