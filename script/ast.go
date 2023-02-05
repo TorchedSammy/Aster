@@ -95,6 +95,21 @@ func (c Call) End() Position {
 	return c.Pos
 }
 
+type SwitchAssign struct {
+	Pos Position
+	Name string
+	Val Value
+	IsToggle bool
+}
+
+func (s SwitchAssign) Start() Position {
+	return s.Pos
+}
+
+func (s SwitchAssign) End() Position {
+	return s.Pos
+}
+
 func Parse(r io.Reader) ([]Node, error) {
 	lx := NewLexer(r)
 
@@ -107,7 +122,6 @@ func Parse(r io.Reader) ([]Node, error) {
 			break
 		}
 
-		fmt.Printf("%s %s\n", token, lit)
 		switch token {
 			case VAR:
 				n := Decl{
@@ -115,20 +129,13 @@ func Parse(r io.Reader) ([]Node, error) {
 				}
 
 				token, pos, lit = lx.Next()
-				fmt.Printf("%s %s\n", token, lit)
-				if token != IDENT {
-					return ops, fmt.Errorf("bad decl") 
-				}
+				expectToken(token, IDENT)
 				n.Name = lit
 
 				token, pos, lit = lx.Next()
-				fmt.Printf("%s %s\n", token, lit)
-				if token != ASSIGN {
-					return ops, fmt.Errorf("bad decl")
-				}
+				expectToken(token, ASSIGN)
 
 				token, pos, lit = lx.Next()
-				fmt.Printf("%s %s\n", token, lit)
 				switch token {
 					case STRING:
 						n.Val = Value{
@@ -157,7 +164,6 @@ func Parse(r io.Reader) ([]Node, error) {
 				}
 
 				token, pos, lit = lx.Next()
-				fmt.Printf("%s %s\n", token, lit)
 				switch token {
 					case ILLEGAL:
 						return ops, fmt.Errorf("oopsie")
@@ -186,6 +192,15 @@ func Parse(r io.Reader) ([]Node, error) {
 						n.Arguments = append(n.Arguments, val)
 				}
 				ops = append(ops, n)
+				case SWITCH:
+					// @switch is a command line option
+					// @switch=val assigns a value while the latter toggles
+					// a boolean
+					ops = append(ops, SwitchAssign{
+						Pos: pos,
+						Name: lit,
+						IsToggle: true,
+					})
 			/*
 			
 			case LPAREN:
@@ -198,6 +213,11 @@ func Parse(r io.Reader) ([]Node, error) {
 		}
 	}
 
-	fmt.Printf("Nodes: %+q\n", ops)
 	return ops, nil
+}
+
+func expectToken(t Token, expected Token) {
+	if t != expected {
+		panic("unexpected token " + t.String())
+	}
 }

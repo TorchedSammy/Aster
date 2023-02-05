@@ -24,6 +24,7 @@ const (
 	LPAREN // (
 	RPAREN // )
 	VAR_REF // #
+	SWITCH // @
 
 	// Math
 	ADD // +
@@ -48,6 +49,7 @@ var tokenIdentMap = map[Token]string{
 	LPAREN: "LPAREN",
 	RPAREN: "RPAREN",
 	VAR_REF: "VAR_REF",
+	SWITCH: "SWITCH",
 
 	ADD: "ADD",
 	SUB: "SUB",
@@ -132,6 +134,11 @@ func (l *Lexer) Next() (Token, Position, string) {
 				ident := l.scanIdent()
 
 				return VAR_REF, start, ident
+			case '@':
+				start := l.pos
+				ident := l.scanIdent()
+
+				return SWITCH, start, ident
 			default:
 				if unicode.IsLetter(r) {
 					start := l.pos
