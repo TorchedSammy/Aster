@@ -98,7 +98,7 @@ This can be done with the `-s` flag.
 # Aster Shell
 Bloom is a domain specific language made for Aster to run image filters.
 Aster's shell mode uses Bloom to run commands. You can take a look at
-a more detailed documentation of Bloom [here](Bloom.md).
+a more detailed documentation of Bloom [here](bloom.md).
 
 The basics of it is that you can start up an Aster shell and run
 commands to make iterating on an image easier and faster.
