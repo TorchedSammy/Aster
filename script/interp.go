@@ -3,6 +3,7 @@ package script
 import (
 	"fmt"
 	"io"
+	"os"
 )
 
 type InterpErrorType int
@@ -47,6 +48,23 @@ func NewInterp() *Interpreter {
 			}
 
 			fmt.Println(v[0].Val)
+
+			return []Value{}
+		},
+	})
+
+	intr.RegisterFunction("source", Fun{
+		Caller: func(v []Value) []Value {
+			if v[0] == EmptyValue {
+				return []Value{}
+			}
+
+			if v[0].Kind != StringKind {
+				panic("expected string and did not get it")
+			}
+
+			f, _ := os.Open(v[0].Val)
+			intr.Run(f)
 
 			return []Value{}
 		},
