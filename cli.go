@@ -197,7 +197,7 @@ func runCli() (int, error) {
 		},
 	})
 
-	f, _ := os.Open("test.aster")
+	f, _ := os.Open("test.bloom")
 	interp.Run(f)
 
 	for {
