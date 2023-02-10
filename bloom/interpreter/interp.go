@@ -1,9 +1,12 @@
-package script
+package interpreter
 
 import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/TorchedSammy/Aster/bloom/ast"
+	"github.com/TorchedSammy/Aster/bloom/parser"
 )
 
 type InterpErrorType int
@@ -19,7 +22,7 @@ var interpErrorMessages = map[InterpErrorType]string{
 
 type Scope struct{
 	Outer *Scope
-	Vars map[string]Value
+	Vars map[string]ast.Value
 	Funs map[string]*Fun
 }
 
@@ -29,7 +32,7 @@ type Interpreter struct{
 
 // An aster function
 type Fun struct{
-	Caller func([]Value) []Value 
+	Caller func([]ast.Value) []ast.Value 
 }
 
 func NewInterp() *Interpreter {
@@ -38,35 +41,35 @@ func NewInterp() *Interpreter {
 	}
 
 	intr.RegisterFunction("print", Fun{
-		Caller: func(v []Value) []Value {
-			if v[0] == EmptyValue {
-				return []Value{}
+		Caller: func(v []ast.Value) []ast.Value {
+			if v[0] == ast.EmptyValue {
+				return []ast.Value{}
 			}
 
-			if v[0].Kind != StringKind {
+			if v[0].Kind != ast.StringKind {
 				panic("expected string and did not get it")
 			}
 
 			fmt.Println(v[0].Val)
 
-			return []Value{}
+			return []ast.Value{}
 		},
 	})
 
 	intr.RegisterFunction("source", Fun{
-		Caller: func(v []Value) []Value {
-			if v[0] == EmptyValue {
-				return []Value{}
+		Caller: func(v []ast.Value) []ast.Value {
+			if v[0] == ast.EmptyValue {
+				return []ast.Value{}
 			}
 
-			if v[0].Kind != StringKind {
+			if v[0].Kind != ast.StringKind {
 				panic("expected string and did not get it")
 			}
 
 			f, _ := os.Open(v[0].Val)
 			intr.Run(f)
 
-			return []Value{}
+			return []ast.Value{}
 		},
 	})
 
@@ -78,26 +81,26 @@ func (i *Interpreter) RegisterFunction(name string, f Fun) {
 }
 
 func (i *Interpreter) Run(r io.Reader) error {
-	nodes, err := Parse(r)
+	nodes, err := parser.Parse(r)
 	if err != nil {
 		return err
 	}
 
 	for _, node := range nodes {
 		switch n := node.(type) {
-			case Decl:
+			case ast.Decl:
 				//fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
 				i.s.Vars[n.Name] = n.Val
-			case Call:
+			case ast.Call:
 				if i.s.Funs[n.Name] == nil {
 					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
 				}
 
-				args := []Value{}
+				args := []ast.Value{}
 
 				for _, arg := range n.Arguments {
-					if arg.Kind == VariableKind {
-						if i.s.Vars[arg.Val] == EmptyValue {
+					if arg.Kind == ast.VariableKind {
+						if i.s.Vars[arg.Val] == ast.EmptyValue {
 							return fmt.Errorf(interpErrorMessages[UndefinedVariable], arg.Val)
 						}
 
@@ -114,14 +117,14 @@ func (i *Interpreter) Run(r io.Reader) error {
 	return nil
 }
 
-func (i *Interpreter) GetGlobal(name string) Value {
+func (i *Interpreter) GetGlobal(name string) ast.Value {
 	return i.s.Vars[name]
 }
 
 func NewScope(outer *Scope) *Scope {
 	return &Scope{
 		Outer: outer,
-		Vars: make(map[string]Value),
+		Vars: make(map[string]ast.Value),
 		Funs: make(map[string]*Fun),
 	}
 }

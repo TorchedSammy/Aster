@@ -11,7 +11,8 @@ import (
 
 	"github.com/mattn/go-sixel"
 	"github.com/chzyer/readline"
-	"github.com/TorchedSammy/Aster/script"
+	"github.com/TorchedSammy/Aster/bloom/interpreter"
+	"github.com/TorchedSammy/Aster/bloom/ast"
 )
 
 type cliState struct{
@@ -73,41 +74,41 @@ func runCli() (int, error) {
 
 	state := cliState{}
 	sixelEncoder := sixel.NewEncoder(os.Stdout)
-	interp := script.NewInterp()
+	interp := interpreter.NewInterp()
 
-	interp.RegisterFunction("hello", script.Fun{
-		Caller: func(v []script.Value) []script.Value {
+	interp.RegisterFunction("hello", interpreter.Fun{
+		Caller: func(v []ast.Value) []ast.Value {
 			greet := "world"
-			if len(v) > 0 && v[0] != script.EmptyValue && v[0].Kind == script.StringKind {
+			if len(v) > 0 && v[0] != ast.EmptyValue && v[0].Kind == ast.StringKind {
 				greet = v[0].Val
 			}
 
 			fmt.Printf("Hello %s!\n", greet)
 
-			return []script.Value{}
+			return []ast.Value{}
 		},
 	})
 
-	interp.RegisterFunction("prompt", script.Fun{
-		Caller: func(v []script.Value) []script.Value {
+	interp.RegisterFunction("prompt", interpreter.Fun{
+		Caller: func(v []ast.Value) []ast.Value {
 			if len(v) == 0 {
 				fmt.Println("Missing required argument to set prompt")
-				return []script.Value{}
+				return []ast.Value{}
 			}
 
 			rl.SetPrompt(v[0].Val)
-			return []script.Value{}
+			return []ast.Value{}
 		},
 	})
 
-	interp.RegisterFunction("load", script.Fun{
-		Caller: func(v []script.Value) (ret []script.Value) {
+	interp.RegisterFunction("load", interpreter.Fun{
+		Caller: func(v []ast.Value) (ret []ast.Value) {
 			if len(v) == 0 {
 				fmt.Println("Missing required path to load image")
 				return
 			}
 
-			if v[0].Kind != script.StringKind {
+			if v[0].Kind != ast.StringKind {
 				fmt.Println("")
 				return
 			}
@@ -132,8 +133,8 @@ func runCli() (int, error) {
 		},
 	})
 
-	interp.RegisterFunction("palette", script.Fun{
-		Caller: func(v []script.Value) (ret []script.Value) {
+	interp.RegisterFunction("palette", interpreter.Fun{
+		Caller: func(v []ast.Value) (ret []ast.Value) {
 			if len(v) == 0 {
 				// TODO: display palette nicely
 				return
@@ -163,8 +164,8 @@ func runCli() (int, error) {
 		},
 	})
 
-	interp.RegisterFunction("recolor", script.Fun{
-		Caller: func(v []script.Value) (ret []script.Value) {
+	interp.RegisterFunction("recolor", interpreter.Fun{
+		Caller: func(v []ast.Value) (ret []ast.Value) {
 			res, err := recolor(state.workingImage, state.palette)
 			if err != nil {
 				fmt.Println(err)
@@ -176,12 +177,12 @@ func runCli() (int, error) {
 		},
 	})
 
-	interp.RegisterFunction("preview", script.Fun{
-		Caller: func(v []script.Value) (ret []script.Value) {
+	interp.RegisterFunction("preview", interpreter.Fun{
+		Caller: func(v []ast.Value) (ret []ast.Value) {
 			f := 35
 			scale := interp.GetGlobal("previewScale")
 			fmt.Println(scale)
-			if scale.Kind == script.NumberKind {
+			if scale.Kind == ast.NumberKind {
 				f, _ = strconv.Atoi(scale.Val)
 			}
 
@@ -190,8 +191,8 @@ func runCli() (int, error) {
 		},
 	})
 
-	interp.RegisterFunction("undo", script.Fun{
-		Caller: func(v []script.Value) (ret []script.Value) {
+	interp.RegisterFunction("undo", interpreter.Fun{
+		Caller: func(v []ast.Value) (ret []ast.Value) {
 			state.undoImg()
 			return
 		},
