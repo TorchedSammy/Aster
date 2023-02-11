@@ -109,3 +109,28 @@ func (s SwitchAssign) End() token.Position {
 	return s.Pos
 }
 
+type Block struct {
+	LBracket token.Position
+	List []Node
+	RBracket token.Position
+	InFilter bool
+}
+
+type FilterType int
+const (
+	ColorFilter FilterType = iota
+)
+
+type FilterDeclaration struct {
+	Pos token.Position
+	Name string
+	Body *Block
+}
+
+func (f FilterDeclaration) Start() token.Position {
+	return f.Pos
+}
+
+func (f FilterDeclaration) End() token.Position {
+	return f.Pos
+}

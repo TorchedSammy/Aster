@@ -81,17 +81,18 @@ func (i *Interpreter) RegisterFunction(name string, f Fun) {
 }
 
 func (i *Interpreter) Run(r io.Reader) error {
-	nodes, err := parser.Parse(r)
+	p := parser.New()
+	nodes, err := p.Parse(r)
 	if err != nil {
 		return err
 	}
 
 	for _, node := range nodes {
 		switch n := node.(type) {
-			case ast.Decl:
+			case *ast.Decl:
 				//fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
 				i.s.Vars[n.Name] = n.Val
-			case ast.Call:
+			case *ast.Call:
 				if i.s.Funs[n.Name] == nil {
 					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
 				}
@@ -111,6 +112,8 @@ func (i *Interpreter) Run(r io.Reader) error {
 				}
 
 				i.s.Funs[n.Name].Caller(args)
+			case *ast.FilterDeclaration:
+				fmt.Printf("declaring a new filter with name %s\n", n.Name)
 		}
 	}
 
