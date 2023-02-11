@@ -23,6 +23,8 @@ const (
 	ASSIGN // =
 	LPAREN // (
 	RPAREN // )
+	LBRACKET // {
+	RBRACKET // }
 	VAR_REF // #
 	SWITCH // @
 
@@ -147,6 +149,10 @@ func (l *Lexer) Next() (Token, Position, string) {
 				ident := l.scanIdent()
 
 				return SWITCH, start, ident
+			case '{':
+				return LBRACKET, l.pos, "{"
+			case '}':
+				return RBRACKET, l.pos, "}"
 			default:
 				if unicode.IsLetter(r) {
 					start := l.pos
