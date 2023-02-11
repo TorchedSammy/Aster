@@ -1,4 +1,4 @@
-![](./bloom/bloom-banner.png)
+![](https://safe.kashima.moe/24bk9ki9km3v.png)
 
 Bloom is a simple and fast DSL for defining image filters and running
 commands. Although it is made for Aster use specifically, the hope is
