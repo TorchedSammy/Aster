@@ -99,7 +99,8 @@ func (i *Interpreter) runBlock(b *ast.Block, s *Scope) error {
 				fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
 				s.Vars[n.Name] = n.Val
 			case *ast.Call:
-				if s.Funs[n.Name] == nil {
+				fmt.Println("running call", n.Name)
+				if s.GetFunc(n.Name) == nil {
 					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
 				}
 
@@ -107,7 +108,7 @@ func (i *Interpreter) runBlock(b *ast.Block, s *Scope) error {
 
 				for _, arg := range n.Arguments {
 					if arg.Kind == ast.VariableKind {
-						if s.Vars[arg.Val] == ast.EmptyValue {
+						if s.GetVar(arg.Val) == ast.EmptyValue {
 							return fmt.Errorf(interpErrorMessages[UndefinedVariable], arg.Val)
 						}
 
@@ -123,7 +124,11 @@ func (i *Interpreter) runBlock(b *ast.Block, s *Scope) error {
 			case *ast.CommandDeclaration:
 				i.RegisterFunction(n.Name, Fun{
 					Caller: func([]ast.Value) []ast.Value {
-						i.runBlock(n.Body, NewScope(s))
+						err := i.runBlock(n.Body, NewScope(s))
+						if err != nil {
+							fmt.Println(err)
+						}
+
 						return []ast.Value{}
 					},
 				})
@@ -143,4 +148,22 @@ func NewScope(outer *Scope) *Scope {
 		Vars: make(map[string]ast.Value),
 		Funs: make(map[string]*Fun),
 	}
+}
+
+func (s *Scope) GetFunc(name string) *Fun {
+	f := s.Funs[name]
+	if f == nil && s.Outer != nil {
+		f = s.Outer.GetFunc(name)
+	}
+
+	return f
+}
+
+func (s *Scope) GetVar(name string) ast.Value {
+	v := s.Vars[name]
+	if v == ast.EmptyValue && s.Outer != nil {
+		v = s.Outer.GetVar(name)
+	}
+
+	return v
 }
