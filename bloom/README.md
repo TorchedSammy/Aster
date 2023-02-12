@@ -31,6 +31,7 @@ function hello(person) {
 	if #person == "" {
 		var person = "world"
 	}
+
 	print "Hello" .. #person .. "!"
 }
 ```
@@ -42,6 +43,12 @@ command name. Commands are one of the center points of Bloom.
 
 ```sh
 print "hello"
+```
+
+### Semicolons
+A semicolon can be used to split up commands on a single line:
+```sh
+foo; bar
 ```
 
 ### Builtin Commands
