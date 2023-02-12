@@ -27,6 +27,7 @@ const (
 	RBRACKET // }
 	VAR_REF // #
 	SWITCH // @
+	SEMICOLON // ;
 
 	// Math
 	ADD // +
@@ -54,6 +55,7 @@ var tokenIdentMap = map[Token]string{
 	RBRACKET: "RBRACKET",
 	VAR_REF: "VAR_REF",
 	SWITCH: "SWITCH",
+	SEMICOLON: "SEMICOLON",
 
 	ADD: "ADD",
 	SUB: "SUB",
@@ -159,6 +161,8 @@ func (l *Lexer) Next() (Token, Position, string) {
 				return LBRACKET, l.pos, "{"
 			case '}':
 				return RBRACKET, l.pos, "}"
+			case ';':
+				return SEMICOLON, l.pos, ";"
 			default:
 				if unicode.IsLetter(r) {
 					start := l.pos

@@ -141,6 +141,8 @@ loop:
 			case token.RBRACKET:
 				p.lexer.Back()
 				break loop
+			case token.SEMICOLON:
+				break loop
 			case token.LPAREN:
 				// TODO: Parse bracket statements
 				continue
