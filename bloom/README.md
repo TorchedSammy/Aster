@@ -84,7 +84,7 @@ value.
 
 ```lua
 var who = "aster"
-print "Hello " #hello
+print "Hello " #who
 ```
 
 ## Filter Declarations
