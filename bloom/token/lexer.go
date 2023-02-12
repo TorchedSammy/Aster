@@ -50,6 +50,8 @@ var tokenIdentMap = map[Token]string{
 	ASSIGN: "ASSIGN",
 	LPAREN: "LPAREN",
 	RPAREN: "RPAREN",
+	LBRACKET: "LBRACKET",
+	RBRACKET: "RBRACKET",
 	VAR_REF: "VAR_REF",
 	SWITCH: "SWITCH",
 
@@ -149,6 +151,10 @@ func (l *Lexer) Next() (Token, Position, string) {
 				ident := l.scanIdent()
 
 				return SWITCH, start, ident
+			case '(':
+				return LPAREN, l.pos, "("
+			case ')':
+				return RPAREN, l.pos, ")"
 			case '{':
 				return LBRACKET, l.pos, "{"
 			case '}':

@@ -3,6 +3,8 @@ package parser
 import (
 	"fmt"
 	"io"
+	"runtime/debug"
+
 	"github.com/TorchedSammy/Aster/bloom/token"
 	"github.com/TorchedSammy/Aster/bloom/ast"
 )
@@ -15,7 +17,7 @@ func New() *Parser {
 	return &Parser{}
 }
 
-func (p *Parser) Parse(r io.Reader) (nodes []ast.Node, err error) {
+func (p *Parser) Parse(r io.Reader) (block *ast.Block, err error) {
 	p.lexer = token.NewLexer(r)
 	ops := []ast.Node{}
 
@@ -26,6 +28,7 @@ func (p *Parser) Parse(r io.Reader) (nodes []ast.Node, err error) {
 			if !ok {
 				err = fmt.Errorf("Unknown error")
 			}
+			err = fmt.Errorf("%w\n%s", err, string(debug.Stack()))
 		}
 	}()
 
@@ -39,43 +42,11 @@ func (p *Parser) Parse(r io.Reader) (nodes []ast.Node, err error) {
 
 		switch tok {
 			case token.VAR:
-				n := &ast.Decl{
-					Pos: pos,
-				}
-
-				tok, pos, lit = p.lexer.Next()
-				expectToken(tok, token.IDENT)
-				n.Name = lit
-
-				tok, pos, lit = p.lexer.Next()
-				expectToken(tok, token.ASSIGN)
-
-				tok, pos, lit = p.lexer.Next()
-				switch tok {
-					case token.STRING:
-						n.Val = ast.Value{
-							Pos: pos,
-							Val: lit,
-							Kind: ast.StringKind,
-						}
-					case token.NUMBER:
-						n.Val = ast.Value{
-							Pos: pos,
-							Val: lit,
-							Kind: ast.NumberKind,
-						}
-				}
-
+				n := p.Decl(pos)
 				ops = append(ops, n)
 			case token.IDENT:
-				if lit == "filter" {
-					// defining filter
-					n := p.Filter()
-					ops = append(ops, n)
-					continue
-				}
+				n := p.Ident(lit, pos)
 
-				n := p.Command(lit, pos)
 				ops = append(ops, n)
 				case token.SWITCH:
 					// @switch is a command line option
@@ -85,8 +56,7 @@ func (p *Parser) Parse(r io.Reader) (nodes []ast.Node, err error) {
 						Pos: pos,
 						IsToggle: true,
 					}
-					t2, _, lit := p.lexer.Next()
-					expectToken(t2, token.IDENT)
+					_, _, lit := p.expectToken(token.IDENT)
 
 					n.Name = lit
 					ops = append(ops, n)
@@ -102,7 +72,51 @@ func (p *Parser) Parse(r io.Reader) (nodes []ast.Node, err error) {
 		}
 	}
 
-	return ops, nil
+	return &ast.Block{
+		List: ops,
+	}, nil
+}
+
+func (p *Parser) Ident(name string, pos token.Position) ast.Node {
+	switch name {
+		case "var":
+			return p.Decl(pos)
+		case "filter":
+			return p.Filter()
+		case "command":
+			return p.CommandDecl()
+		default:
+			return p.Command(name, pos)
+	}
+}
+
+func (p *Parser) Decl(pos token.Position) *ast.Decl {
+	n := &ast.Decl{
+		Pos: pos,
+	}
+
+	_, _, lit := p.expectToken(token.IDENT)
+	n.Name = lit
+
+	p.expectToken(token.ASSIGN)
+
+	tok, pos, lit := p.lexer.Next()
+	switch tok {
+		case token.STRING:
+			n.Val = ast.Value{
+				Pos: pos,
+				Val: lit,
+				Kind: ast.StringKind,
+			}
+		case token.NUMBER:
+			n.Val = ast.Value{
+			Pos: pos,
+			Val: lit,
+			Kind: ast.NumberKind,
+		}
+	}
+
+	return n
 }
 
 // Command parses a command/function call.
@@ -113,23 +127,24 @@ func (p *Parser) Command(cmd string, cmdPos token.Position) *ast.Call {
 	// its a call
 	var args []ast.Value
 
+loop:
 	for {
 		t, pos, lit := p.lexer.Next()
 
 		if pos.Line != cmdPos.Line || t == token.EOF {
 			// TODO: unread token
-			return &ast.Call{
-				Name: cmd,
-				Arguments: args,
-			}
+			break
 		}
 
 		var val ast.Value
 		switch t {
-			case token.LBRACKET:
+			case token.RBRACKET:
+				p.lexer.Back()
+				break loop
+			case token.LPAREN:
 				// TODO: Parse bracket statements
 				continue
-			case token.RBRACKET:
+			case token.RPAREN:
 				// TODO: same thing as above
 				continue
 			case token.IDENT:
@@ -161,37 +176,67 @@ func (p *Parser) Command(cmd string, cmdPos token.Position) *ast.Call {
 		}
 		args = append(args, val)
 	}
+
+	return &ast.Call{
+		Name: cmd,
+		Arguments: args,
+	}
 }
 
 // Block parses a block.
 func (p *Parser) Block() *ast.Block {
-	lbr, lbrPos, _ := p.lexer.Next()
-	expectToken(lbr, token.LBRACKET)
+	_, lbrPos, _ := p.expectToken(token.LBRACKET)
 
 	var list []ast.Node
 	for {
 		t, pos, lit := p.next()
 		switch t {
-			case token.IDENT:
-				list = append(list, p.Command(lit, pos))
+			case token.IDENT, token.VAR:
+				list = append(list, p.Ident(lit, pos))
 			case token.RBRACKET:
 				return &ast.Block{
 					LBracket: lbrPos,
 					List: list,
 					RBracket: pos,
 				}
-			case token.EOF:
-				panic("unexpected EOF")
 		}
 	}
+}
+
+func (p *Parser) CommandDecl() *ast.CommandDeclaration {
+	_, pos, lit := p.expectToken(token.IDENT) // name of command
+
+	n := &ast.CommandDeclaration{
+		Pos: pos,
+		Name: lit,
+	}
+
+	p.expectToken(token.LPAREN)
+
+	var params []string
+	for {
+		t3, _, param := p.next()
+		if t3 == token.IDENT {
+			params = append(params, param)
+		} else if t3 == token.RPAREN {
+			break
+		} else {
+			panic("????")
+		}
+	}
+	fmt.Println(params)
+
+	n.Body = p.Block()
+	n.Signature = params
+
+	return n
 }
 
 // Filter parses a filter declaration.
 // This is in the form of:
 // filter name { ... }
 func (p *Parser) Filter() *ast.FilterDeclaration {
-	t1, pos, lit := p.next()
-	expectToken(t1, token.IDENT) // name of filter
+	_, pos, lit := p.expectToken(token.IDENT) // name of filter
 
 	n := &ast.FilterDeclaration{
 		Pos: pos,
@@ -208,14 +253,18 @@ func (p *Parser) Filter() *ast.FilterDeclaration {
 func (p *Parser) next() (token.Token, token.Position, string) {
 	t, pos, lit := p.lexer.Next()
 	if t == token.EOF {
-		panic("unexpected EOF")
+		panic(fmt.Errorf("unexpected EOF"))
 	}
 
 	return t, pos, lit
 }
 
-func expectToken(t token.Token, expected token.Token) {
+func (p *Parser) expectToken(expected token.Token) (token.Token, token.Position, string) {
+	t, pos, lit := p.next()
+
 	if t != expected {
-		panic("unexpected tok " + t.String())
+		panic(fmt.Errorf("expected %s, found %s", expected, t))
 	}
+
+	return t, pos, lit
 }

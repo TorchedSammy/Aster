@@ -116,6 +116,21 @@ type Block struct {
 	InFilter bool
 }
 
+type CommandDeclaration struct {
+	Pos token.Position
+	Name string
+	Signature []string
+	Body *Block
+}
+
+func (c CommandDeclaration) Start() token.Position {
+	return c.Pos
+}
+
+func (c CommandDeclaration) End() token.Position {
+	return c.Pos
+}
+
 type FilterType int
 const (
 	ColorFilter FilterType = iota
