@@ -23,12 +23,12 @@ filter sepia {
 	var g = (#r * 0.349) + (#g * 0.686) + (#b * 0.168)
 	var b = (#r * 0.272) + (#g * 0.534) + (#b * 0.131)
 
-	return r, g, b
+	return #r, #g, #b
 }
 
 // meanwhile a function could do anything
 function hello(person) {
-	if person == "" {
+	if #person == "" {
 		var person = "world"
 	}
 	print "Hello" .. #person .. "!"
@@ -101,11 +101,11 @@ and returned.
 filter name {
 	op filterType 'color'
 
-	var r = r * 2
-	var g = g * 2
-	var b = b * 2
+	var r = #r * 2
+	var g = #g * 2
+	var b = #b * 2
 
-	return r, g, b
+	return #r, #g, #b
 }
 ```
 
