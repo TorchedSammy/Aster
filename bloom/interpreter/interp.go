@@ -24,10 +24,12 @@ type Scope struct{
 	Outer *Scope
 	Vars map[string]ast.Value
 	Funs map[string]*Fun
+	Filters map[string]*Filter
 }
 
 type Interpreter struct{
 	s *Scope
+	fh *FilterHandler
 }
 
 // An aster function
@@ -82,18 +84,22 @@ func (i *Interpreter) RegisterFunction(name string, f Fun) {
 
 func (i *Interpreter) Run(r io.Reader) error {
 	p := parser.New()
-	nodes, err := p.Parse(r)
+	block, err := p.Parse(r)
 	if err != nil {
 		return err
 	}
 
-	for _, node := range nodes {
+	return i.runBlock(block, i.s)
+}
+
+func (i *Interpreter) runBlock(b *ast.Block, s *Scope) error {
+	for _, node := range b.List {
 		switch n := node.(type) {
 			case *ast.Decl:
-				//fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
-				i.s.Vars[n.Name] = n.Val
+				fmt.Printf("!! assigning %s to a value of \"%s\"\n", n.Name, n.Val)
+				s.Vars[n.Name] = n.Val
 			case *ast.Call:
-				if i.s.Funs[n.Name] == nil {
+				if s.Funs[n.Name] == nil {
 					return fmt.Errorf(interpErrorMessages[UndefinedCommand], n.Name)
 				}
 
@@ -101,11 +107,11 @@ func (i *Interpreter) Run(r io.Reader) error {
 
 				for _, arg := range n.Arguments {
 					if arg.Kind == ast.VariableKind {
-						if i.s.Vars[arg.Val] == ast.EmptyValue {
+						if s.Vars[arg.Val] == ast.EmptyValue {
 							return fmt.Errorf(interpErrorMessages[UndefinedVariable], arg.Val)
 						}
 
-						args = append(args, i.s.Vars[arg.Val])
+						args = append(args, s.Vars[arg.Val])
 					}
 
 					args = append(args, arg)
@@ -114,6 +120,13 @@ func (i *Interpreter) Run(r io.Reader) error {
 				i.s.Funs[n.Name].Caller(args)
 			case *ast.FilterDeclaration:
 				fmt.Printf("declaring a new filter with name %s\n", n.Name)
+			case *ast.CommandDeclaration:
+				i.RegisterFunction(n.Name, Fun{
+					Caller: func([]ast.Value) []ast.Value {
+						i.runBlock(n.Body, NewScope(s))
+						return []ast.Value{}
+					},
+				})
 		}
 	}
 
