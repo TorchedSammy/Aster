@@ -11,14 +11,26 @@ import (
 	"os"
 	"strings"
 
-	// supported formats
-	"image/jpeg"
-	"image/png"
-
 	"github.com/spf13/pflag"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/brouxco/dithering"
 )
+
+type imageProcessor interface{
+	Decode(*os.File)
+	Swap(inverter)
+	Colorize(bool, draw.Drawer)
+	Write(*os.File)
+}
+
+type processImage struct{
+	imgs []image.Image
+	processed []image.Image
+	format string
+}
+type inverter func(color.Color) color.Color
+var queue []imageProcessor
+var palette color.Palette
 
 func main() {
 	inFlag := pflag.StringP("input", "i", "", "Path to input image")
@@ -51,7 +63,6 @@ func main() {
 			perr("Invalid dither algorithm", *ditherAlgoFlag)
 		}
 	}
-	var palette color.Palette
 
 	if *paletteFileFlag != "" {
 		var err error
@@ -96,48 +107,38 @@ func main() {
 	if err != nil {
 		perr("Could not open input file")
 	}
+
 	outFile, err := os.Create(*outFlag)
 	if err != nil {
 		perr("Could not create output file")
 	}
 
-	inImg, format, err := image.Decode(inFile)
-	if err != nil {
-		perr("Could not decode image:", err)
-	}
-	bounds := inImg.Bounds()
-
-	var outImg draw.Image
-
-	var colorInverter func(color.Color) color.Color = normalInverter
+	var colorInverter inverter = normalInverter
 	if *grayscaleSwapFlag {
 		colorInverter = grayscaleInverter
 	}
 
-	if *swapFlag {
-		rgbImg := image.NewNRGBA(bounds)
-		for y := 0; y < bounds.Max.Y; y++ {
-			for x := 0; x < bounds.Max.X; x++ {
-				c := colorInverter(inImg.At(x, y))
-				rgbImg.Set(x, y, c)
-			}
-		}
-		inImg = rgbImg
-		outImg = rgbImg
+	var processor imageProcessor
+	splits := strings.Split(*inFlag, ".")
+	ext := splits[len(splits) - 1]
+	switch ext {
+		case "gif": processor = &gifProcessor{}
+		case "png", "jpg", "jpeg": processor = &singleImageProcessor{}
 	}
+	queue := append(queue, processor)
 
-	if !*swapOnlyFlag {
-		outImg = image.NewPaletted(bounds, palette)
-		if *ditherFlag {
-			dither.Draw(outImg, bounds, inImg, bounds.Min)
-		} else {
-			draw.Draw(outImg, bounds, inImg, bounds.Min, draw.Src)
+	for _, im := range queue {
+		im.Decode(inFile)
+
+		if *swapFlag {
+			im.Swap(colorInverter)
 		}
-	}
 
-	switch format {
-		case "jpeg": jpeg.Encode(outFile, outImg, nil)
-		case "png": png.Encode(outFile, outImg)
+		if !*swapOnlyFlag {
+			im.Colorize(*ditherFlag, dither)
+		}
+
+		im.Write(outFile)
 	}
 }
 

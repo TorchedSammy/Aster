@@ -12,11 +12,17 @@ Aster is a simple command line tool to recolor images into a specific palette.
 Aster relies purely on the Go standard library for the image colorization
 process itself, including with Floyd-Steinberg dithering, so it's pretty fast.
 
+It also supports GIFs!  
+
+| Original                           | Recolored                           |
+| ---------------------------------- | ----------------------------------- |
+| ![](samples/nyan-cat.gif)          | ![](samples/nyan-cat-converted.gif) |
+
 # Features
 - [x] Recolor images
   - [x] JPEG
   - [x] PNG
-  - [ ] GIF
+  - [xl] GIF
 - [x] Dithering
   - [x] Floyd-Steinberg
   - [x] Atkinson
@@ -64,7 +70,8 @@ you can supply the `-w` (or `--pywal`) flag and Aster will take the generated co
 
 ## Dithering
 That result image before doesn't look that good, does it? To make the result look nicer
-with a bit more detail, Aster can use Floyd-Steinberg dithering. Here's our new result:  
+with a bit more detail, Aster can use Floyd-Steinberg dithering (this is default behaviour).
+Here's our new result:  
 | Image                      | Result                                 |
 | -------------------------- | -------------------------------------- |
 | ![](samples/wallpaper.png) | ![](samples/wallpaper-conv-dither.png) |
