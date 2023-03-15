@@ -22,7 +22,7 @@ It also supports GIFs!
 - [x] Recolor images
   - [x] JPEG
   - [x] PNG
-  - [xl] GIF
+  - [x] GIF
 - [x] Dithering
   - [x] Floyd-Steinberg
   - [x] Atkinson
