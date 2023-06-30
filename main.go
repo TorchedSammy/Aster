@@ -123,7 +123,7 @@ func main() {
 	ext := splits[len(splits) - 1]
 	switch ext {
 		case "gif": processor = &gifProcessor{}
-		case "png", "jpg", "jpeg": processor = &singleImageProcessor{}
+		case "png", "jpg", "jpeg": processor = &clutProcessor{}
 	}
 	queue := append(queue, processor)
 
