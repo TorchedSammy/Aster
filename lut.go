@@ -58,7 +58,7 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 		Sigma: 20,
 		Src: rand.NewSource(42080085),
     }
-    iterations := 4
+    iterations := 64
     for blue := 0; blue < clutSize; blue++ {
         for green := 0; green < clutSize; green++ {
             for red := 0; red < clutSize; red++ {
@@ -93,11 +93,11 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 						0xff,
 					}
 
-					corrected := palette[palette.Index(clutColor)]
+					corrected := palette.Convert(clutColor)
 					r, g, b, _ := corrected.RGBA()
-					mean[0] += float64(r) / float64(iterations)
-					mean[1] += float64(g) / float64(iterations)
-					mean[2] += float64(b) / float64(iterations)
+					mean[0] += float64(r / 256) / float64(iterations)
+					mean[1] += float64(g / 256) / float64(iterations)
+					mean[2] += float64(b / 256) / float64(iterations)
 				}
 				correctedColor := color.RGBA{
 					uint8(math.Round(mean[0])),
