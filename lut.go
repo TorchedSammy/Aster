@@ -81,7 +81,7 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 				correctedColor := palette[palette.Index(clutColor)]
 				*/
 
-				// rbf gaussian (that also doesnt work lol)
+				// gaussian sampling (that also doesnt work lol)
 				// im stupid
 				mean := []float64{0, 0, 0}
 				for n := 0; n < iterations; n++ {
@@ -94,12 +94,10 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 					}
 
 					corrected := palette[palette.Index(clutColor)]
-					r, g, b, _ := clutColor.RGBA()
-					mean = []float64{
-						(mean[0] + float64(r)) / float64(iterations),
-						(mean[1] + float64(g)) / float64(iterations),
-						(mean[2] + float64(b)) / float64(iterations),
-					}
+					r, g, b, _ := corrected.RGBA()
+					mean[0] += float64(r) / float64(iterations)
+					mean[1] += float64(g) / float64(iterations)
+					mean[2] += float64(b) / float64(iterations)
 				}
 				correctedColor := color.RGBA{
 					uint8(math.Round(mean[0])),
