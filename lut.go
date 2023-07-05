@@ -8,7 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"math"
+	//"math"
 	"os"
 
 	//"github.com/lucasb-eyer/go-colorful"
@@ -58,7 +58,7 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 		Sigma: 20,
 		Src: rand.NewSource(42080085),
     }
-    iterations := 64
+    iterations := 512
     for blue := 0; blue < clutSize; blue++ {
         for green := 0; green < clutSize; green++ {
             for red := 0; red < clutSize; red++ {
@@ -86,23 +86,23 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 				mean := []float64{0, 0, 0}
 				for n := 0; n < iterations; n++ {
 					_ = n // dont ask
-					clutColor = color.RGBA{
-						clutColor.R + uint8(math.Round(dist.Rand())),
-						clutColor.G + uint8(math.Round(dist.Rand())),
-						clutColor.B + uint8(math.Round(dist.Rand())),
+					color := color.RGBA{
+						uint8(float64(clutColor.R) + dist.Rand()),
+						uint8(float64(clutColor.G) + dist.Rand()),
+						uint8(float64(clutColor.B) + dist.Rand()),
 						0xff,
 					}
 
-					corrected := palette.Convert(clutColor)
+					corrected := palette.Convert(color)
 					r, g, b, _ := corrected.RGBA()
-					mean[0] += float64(r / 256) / float64(iterations)
-					mean[1] += float64(g / 256) / float64(iterations)
-					mean[2] += float64(b / 256) / float64(iterations)
+					mean[0] += float64(r / 257) / float64(iterations)
+					mean[1] += float64(g / 257) / float64(iterations)
+					mean[2] += float64(b / 257) / float64(iterations)
 				}
 				correctedColor := color.RGBA{
-					uint8(math.Round(mean[0])),
-					uint8(math.Round(mean[1])),
-					uint8(math.Round(mean[2])),
+					uint8((mean[0])),
+					uint8((mean[1])),
+					uint8((mean[2])),
 					0xff,
 				}
 
