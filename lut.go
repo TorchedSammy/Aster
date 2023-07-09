@@ -8,7 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	//"math"
+	"math"
 	"os"
 
 	//"github.com/lucasb-eyer/go-colorful"
@@ -43,9 +43,22 @@ func (imgp *clutProcessor) Swap(colorInverter inverter) {
 	imgp.in = rgbImg
 }
 
+func uint8Add(a uint8, b float64) uint8 {
+	res := int(math.Round(float64(a) + b))
+	return uint8Conv(res)
+}
+
+func uint8Conv(num int) uint8 {
+	if num > math.MaxUint8 {
+		return math.MaxUint8
+	}
+
+	return uint8(num)
+}
+
 func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 	// step 1: generate half clut
-	level := 8 // ??
+	level := 6 // ??
 	clutSize := level * level
 	clutImgSize := clutSize * level // 8 * 8 * 8 (cube, makes sense right?) 
 	clutBounds := image.Rectangle{Min: image.Point{0, 0}, Max: image.Point{clutImgSize, clutImgSize}}
@@ -62,14 +75,15 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
     for blue := 0; blue < clutSize; blue++ {
         for green := 0; green < clutSize; green++ {
             for red := 0; red < clutSize; red++ {
-                r := (red * 255) / (clutSize - 1);
-                g := (green * 255) / (clutSize - 1);
-                b := (blue * 255) / (clutSize - 1);
+                r := (red * 0xff) / (clutSize - 1);
+                g := (green * 0xff) / (clutSize - 1);
+                b := (blue * 0xff) / (clutSize - 1);
 
                 x := p % clutImgSize;
                 y := (p - x) / clutImgSize;
 
-				clutColor := color.RGBA{uint8(r), uint8(g), uint8(b), 0xff}
+				clutColor := color.NRGBA{uint8(r), uint8(g), uint8(b), 0xff}
+				//correctedColor := clutColor
 				/*
 				// 3rd party blend thing attempt that didnt work well
 				cA, _ := colorful.MakeColor(clutColor)
@@ -85,24 +99,24 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 				// im stupid
 				mean := []float64{0, 0, 0}
 				for n := 0; n < iterations; n++ {
-					_ = n // dont ask
-					color := color.RGBA{
-						uint8(float64(clutColor.R) + dist.Rand()),
-						uint8(float64(clutColor.G) + dist.Rand()),
-						uint8(float64(clutColor.B) + dist.Rand()),
+					_ = n
+					c := color.NRGBA{
+						uint8Add(clutColor.R, math.Round(dist.Rand())),
+						uint8Add(clutColor.G, math.Round(dist.Rand())),
+						uint8Add(clutColor.B, math.Round(dist.Rand())),
 						0xff,
 					}
 
-					corrected := palette.Convert(color)
-					r, g, b, _ := corrected.RGBA()
-					mean[0] += float64(r / 257) / float64(iterations)
-					mean[1] += float64(g / 257) / float64(iterations)
-					mean[2] += float64(b / 257) / float64(iterations)
+					corrected := palette.Convert(c).(color.NRGBA)
+					mean[0] += float64(corrected.R) / float64(iterations)
+					mean[1] += float64(corrected.G) / float64(iterations)
+					mean[2] += float64(corrected.B) / float64(iterations)
 				}
-				correctedColor := color.RGBA{
-					uint8((mean[0])),
-					uint8((mean[1])),
-					uint8((mean[2])),
+				println("x, y: ", x, y, " color: ", uint8Conv(int(math.Round(mean[0]))), uint8Conv(int(math.Round(mean[1]))), uint8Conv(int(math.Round(mean[2]))))
+				correctedColor := color.NRGBA{
+					uint8Conv(int(math.Round(mean[0]))),
+					uint8Conv(int(math.Round(mean[1]))),
+					uint8Conv(int(math.Round(mean[2]))),
 					0xff,
 				}
 
@@ -119,10 +133,10 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 	outImg := image.NewNRGBA(bounds)
 	for y := 0; y < bounds.Max.Y; y++ {
 		for x := 0; x < bounds.Max.X; x++ {
-			i := imgp.in.At(x, y).(color.RGBA)
-			r := uint32(i.R) * uint32(clutSize - 1) / 255;
-			g := uint32(i.G) * uint32(clutSize - 1) / 255;
-			b := uint32(i.B) * uint32(clutSize - 1) / 255;
+			iR, iG, iB, _ := imgp.in.At(x, y).RGBA()
+			r := (uint32(iR / 255) * uint32(clutSize - 1)) / 255;
+			g := (uint32(iG / 255) * uint32(clutSize - 1)) / 255;
+			b := (uint32(iB / 255) * uint32(clutSize - 1)) / 255;
 
 			xx := (int(r) % clutSize) + (int(g) % (level)) * clutSize;
 			yy := (int(b) * level) + (int(g) / level);
@@ -132,7 +146,6 @@ func (imgp *clutProcessor) Colorize(doDither bool, ditherer draw.Drawer) {
 	}
 
 	imgp.out = outImg
-*/
 	/*
 	bounds := imgp.in.Bounds()
 	outImg := image.NewPaletted(bounds, palette)

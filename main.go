@@ -198,7 +198,7 @@ func strToColor(str string) (color.Color, error) {
 		}
 		
 		//                  r     g     b    a
-		return color.RGBA{b[0], b[1], b[2], 0xff}, nil
+		return color.NRGBA{b[0], b[1], b[2], 0xff}, nil
 	}
 
 	return nil, errors.New("Invalid format for color")
