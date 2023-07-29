@@ -1,3 +1,5 @@
+# Use [lutgen](https://github.com/ozwaldorf/lutgen-rs) instead since it's better.
+
 # Aster
 > 🌼 Command line image colorizer utility.
 
