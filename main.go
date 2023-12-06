@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
+	"golang.org/x/image/draw"
 	"math"
 	"os"
 	"strings"
@@ -44,8 +44,17 @@ func main() {
 	grayscaleSwapFlag := pflag.BoolP("grayscaleSwap", "g", false, "Only invert parts of the image that are calculated to be grayscale (blacks/whites)")
 	pywalFlag := pflag.BoolP("pywal", "w", false, "Use pywal colors as the palette")
 	xresourcesFlag := pflag.BoolP("xresources", "x", false, "Use colors from Xresources as the palette")
+	cliFlag := pflag.BoolP("cli", "c", false, "Use the Aster command line shell")
 
 	pflag.Parse()
+
+	if *cliFlag {
+		exit, err := runCli()
+		if err != nil {
+			fmt.Println(err)
+		}
+		os.Exit(exit)
+	}
 	check(inFlag, "input")
 	check(outFlag, "output")
 //	check(paletteFlag, "palette")
@@ -223,11 +232,11 @@ func normalizeHex(hx string) (string, error) {
 }
 
 func getDitherAlgo(algo string) (alg draw.Drawer, err error) {
-	switch algo {
+	switch strings.ToLower(algo) {
 		case "floydsteinberg": alg = draw.FloydSteinberg // stdlib floyd is more optimized, from reading the code
 		case "atkinson": alg = dithering.NewDither(dithering.Atkinson)
 		case "jjn", "jarvisjudiceninke": alg = dithering.NewDither(dithering.JarvisJudiceNinke)
-		default: err = errors.New("invalid dither algorithm")
+		default: err = fmt.Errorf("invalid dither algorithm %s", algo)
 	}
 
 	return

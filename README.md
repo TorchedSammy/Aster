@@ -4,6 +4,8 @@
 > 🌼 Command line image colorizer utility.
 
 Aster is a simple command line tool to recolor images into a specific palette.
+If desired, Aster also includes a [shell](#aster-shell).
+
 
 | Original                           | Recolored                     |
 | ---------------------------------- | ----------------------------- |
@@ -101,6 +103,18 @@ This can be done with the `-s` flag.
 | Image                                                    | Result                                         | Result (Inverted)                              |
 | -------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------- |
 | ![](https://w.wallhaven.cc/full/1k/wallhaven-1kqgdg.jpg) | ![](https://safe.kashima.moe/ku5olz0vcxbb.jpg) | ![](https://safe.kashima.moe/el3twmmjt26l.jpg) |
+
+# Aster Shell
+Bloom is a domain specific language made for Aster to run image filters.
+Aster's shell mode uses Bloom to run commands. You can take a look at
+a more detailed documentation of Bloom [here](bloom.md).
+
+The basics of it is that you can start up an Aster shell and run
+commands to make iterating on an image easier and faster.
+
+![](https://safe.kashima.moe/2ovljca6zb61.png)
+
+![](https://safe.kashima.moe/alhiptrnu5h3.png)
 
 # License
 MIT
